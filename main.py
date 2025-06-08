@@ -1,6 +1,7 @@
 import argparse
 import os
 import time
+import threading
 import torch
 from transformers import (
     AutoTokenizer,
@@ -9,10 +10,45 @@ from transformers import (
     DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
+    TrainerCallback,
 )
+
+import gradio as gr
 
 
 from datasets import load_dataset as hf_load_dataset
+
+
+# Shared progress log accessible by the training loop and the web UI
+progress_log = []
+
+
+class ProgressCallback(TrainerCallback):
+    """Collect training metrics for display in the web UI."""
+
+    def on_log(self, args, state, control, logs=None, **kwargs):
+        if logs is not None:
+            entry = {"step": state.global_step}
+            entry.update(logs)
+            progress_log.append(entry)
+
+
+def launch_ui():
+    """Start the Gradio web UI in a separate thread."""
+    with gr.Blocks() as demo:
+        log_md = gr.Markdown()
+
+        def update():
+            if not progress_log:
+                return "Waiting for training to start..."
+            lines = [
+                f"**Step {p['step']}** - loss: {p.get('loss', 'N/A')}" for p in progress_log[-20:]
+            ]
+            return "\n".join(lines)
+
+        demo.load(update, None, log_md, every=1)
+
+    demo.launch(server_name="0.0.0.0", share=False)
 
 
 def load_local_dataset(file_path: str, tokenizer: AutoTokenizer):
@@ -37,6 +73,9 @@ def main():
     parser.add_argument('--sleep_secs', type=int, default=10)
     parser.add_argument('--max_loops', type=int, default=1, help='Number of improvement loops (0 for infinite)')
     args = parser.parse_args()
+
+    # Start the web UI in a background thread
+    threading.Thread(target=launch_ui, daemon=True).start()
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -90,6 +129,7 @@ def main():
             num_train_epochs=1,
             save_steps=args.steps_per_loop,
             logging_steps=10,
+            logging_dir=os.path.join(args.model_path, "logs"),
             no_cuda=not torch.cuda.is_available(),
             save_total_limit=1,
         )
@@ -99,6 +139,7 @@ def main():
             args=training_args,
             train_dataset=dataset,
             data_collator=data_collator,
+            callbacks=[ProgressCallback()],
         )
 
         trainer.train()

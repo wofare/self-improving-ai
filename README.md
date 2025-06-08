@@ -35,6 +35,10 @@ The `--max_loops 0` argument keeps the program running indefinitely. Each time a
 new file appears in `data/incoming`, the contents will be used to further train
 the model. Processed files are moved to `data/processed`.
 
+While the script is running you can monitor training progress at
+`http://localhost:7860`. The web page automatically updates with the latest
+training loss as it becomes available.
+
 To stop the program, press `Ctrl+C`.
 
 ## Notes
