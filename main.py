@@ -45,8 +45,8 @@ def main():
         tokenizer = AutoTokenizer.from_pretrained(args.model_path)
         model = AutoModelForCausalLM.from_pretrained(args.model_path)
     else:
-        tokenizer = AutoTokenizer.from_pretrained('gpt2')
-        model = AutoModelForCausalLM.from_pretrained('gpt2')
+        tokenizer = AutoTokenizer.from_pretrained('mistralai/Devstral-Small-2505')
+        model = AutoModelForCausalLM.from_pretrained('mistralai/Devstral-Small-2505')
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
