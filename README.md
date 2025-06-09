@@ -49,3 +49,27 @@ To stop the program, press `Ctrl+C`.
 - Training data is accumulated in `data/training_data.txt`. You can remove or
   edit this file to reset the training history.
 
+
+## Docker
+
+You can run the project inside a Docker container instead of installing Python
+and dependencies locally.
+
+Build the image:
+
+```bash
+docker build -t self-improving-ai .
+```
+
+Then run it, mounting your local `data` and `model` directories so the training
+state persists between runs:
+
+```bash
+docker run -it --rm -p 7860:7860 \
+  -v $(pwd)/data:/app/data \
+  -v $(pwd)/model:/app/model \
+  self-improving-ai
+```
+
+The container launches `python main.py --max_loops 0` by default and exposes
+the Gradio interface on port 7860.
