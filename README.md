@@ -5,9 +5,9 @@ continuously looks for new text files in `./data/incoming`. When new files are
 found, their content is appended to a training dataset and the model performs a
 brief fine-tuning step. The updated model is saved to `./model`.
 
-The default base model is `mistralai/Devstral-Small-2505` from the Hugging Face
-hub. Because the training loop runs in small increments, you can fine-tune and
-save your model locally.
+The default base model is `Qwen/Qwen3-8B` from the Hugging Face hub. Because the
+training loop runs in small increments, you can fine-tune and save your model
+locally.
 
 ## Usage
 
@@ -43,9 +43,8 @@ To stop the program, press `Ctrl+C`.
 
 ## Notes
 
-- The example uses `mistralai/Devstral-Small-2505`. This model is large, so you
-  may need to experiment with batch size or quantization to fit it on your
-  hardware.
+- The example uses `Qwen/Qwen3-8B`. This model is large, so you may need to
+  experiment with batch size or quantization to fit it on your hardware.
 - Training data is accumulated in `data/training_data.txt`. You can remove or
   edit this file to reset the training history.
 
