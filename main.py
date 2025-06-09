@@ -6,7 +6,6 @@ import torch
 from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
-    TextDataset,
     DataCollatorForLanguageModeling,
     Trainer,
     TrainingArguments,
@@ -67,6 +66,7 @@ def load_local_dataset(file_path: str, tokenizer: AutoTokenizer):
 def main():
     parser = argparse.ArgumentParser(description="Self-improving language model")
     parser.add_argument('--model_path', default='./model', help='Where to save or load the model')
+    parser.add_argument('--base_model', default='distilgpt2', help='Model name to load when no local model is found')
     parser.add_argument('--data_dir', default='./data', help='Directory with incoming data')
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--steps_per_loop', type=int, default=100)
@@ -84,8 +84,8 @@ def main():
         tokenizer = AutoTokenizer.from_pretrained(args.model_path)
         model = AutoModelForCausalLM.from_pretrained(args.model_path)
     else:
-        tokenizer = AutoTokenizer.from_pretrained('mistralai/Devstral-Small-2505')
-        model = AutoModelForCausalLM.from_pretrained('mistralai/Devstral-Small-2505')
+        tokenizer = AutoTokenizer.from_pretrained(args.base_model)
+        model = AutoModelForCausalLM.from_pretrained(args.base_model)
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
