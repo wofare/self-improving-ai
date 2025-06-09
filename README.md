@@ -25,10 +25,10 @@ mkdir -p data/incoming data/processed
 
 3. Place any `.txt` files you want the model to learn from in `data/incoming`.
 
-4. Run the script (use `--pretrained_model` to override the large default model):
+4. Run the script (use `--pretrained_model` to override the large default model). You can change the UI port or share the interface publicly with `--ui_port` and `--share`:
 
 ```bash
-python main.py --pretrained_model sshleifer/tiny-gpt2 --max_loops 0
+python main.py --pretrained_model sshleifer/tiny-gpt2 --max_loops 0 --ui_port 7860
 ```
 
 For a quick smoke test without downloading large models, add `--dry_run` to skip
@@ -39,7 +39,7 @@ new file appears in `data/incoming`, the contents will be used to further train
 the model. Processed files are moved to `data/processed`.
 
 While the script is running you can monitor training progress at
-`http://localhost:7860`. The web page automatically updates with the latest
+`http://localhost:7860` (or another port if you used `--ui_port`). The web page automatically updates with the latest
 training loss as it becomes available.
 
 To stop the program, press `Ctrl+C`.
@@ -48,8 +48,13 @@ To stop the program, press `Ctrl+C`.
 
 - The example uses `Qwen/Qwen3-8B`. This model is large, so you may need to
   experiment with batch size or quantization to fit it on your hardware.
-- Training data is accumulated in `data/training_data.txt`. You can remove or
-  edit this file to reset the training history.
+- Training data is accumulated in `data/training_data.txt` by default. Use
+  `--dataset_file` to point at a custom file if you want to store the dataset
+  elsewhere. You can edit or delete this file to reset the training history.
+- Pass `--log_file metrics.csv` to write training metrics to disk as a CSV
+  alongside the live web view.
+- The repository includes a `.gitignore` that excludes the `data` and `model`
+  directories so large training artifacts don't clutter your commits.
 
 
 ## Docker

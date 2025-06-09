@@ -18,11 +18,20 @@ def main():
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--steps_per_loop', type=int, default=100)
     parser.add_argument('--sleep_secs', type=int, default=10)
-    parser.add_argument('--max_loops', type=int, default=1, help='Number of improvement loops (0 for infinite)')
+    parser.add_argument('--max_loops', type=int, default=1,
+                        help='Number of improvement loops (0 for infinite)')
     parser.add_argument('--pretrained_model', default='Qwen/Qwen3-8B',
                         help='HF model to use when no local model is found')
     parser.add_argument('--dry_run', action='store_true',
                         help='Skip model downloads and training')
+    parser.add_argument('--dataset_file', default=None,
+                        help='Path to training data text file')
+    parser.add_argument('--log_file', default=None,
+                        help='CSV file to store training logs')
+    parser.add_argument('--ui_port', type=int, default=7860,
+                        help='Port for the Gradio interface')
+    parser.add_argument('--share', action='store_true',
+                        help='Share the Gradio UI publicly')
     args = parser.parse_args()
 
     if args.dry_run:
@@ -43,7 +52,14 @@ def main():
             for fname in incoming_files:
                 path = os.path.join(incoming_dir, fname)
                 os.rename(path, os.path.join(processed_dir, fname))
-            progress_log.append({'step': loop, 'loss': 'dry_run'})
+            entry = {'step': loop, 'loss': 'dry_run'}
+            progress_log.append(entry)
+            if args.log_file:
+                is_new = not os.path.exists(args.log_file)
+                with open(args.log_file, 'a', encoding='utf-8') as f:
+                    if is_new:
+                        f.write('step,loss\n')
+                    f.write(f"{entry['step']},{entry['loss']}\n")
             print('Dry run iteration completed. Waiting for new data...')
             time.sleep(args.sleep_secs)
             loop += 1
@@ -63,14 +79,25 @@ def main():
     import gradio as gr
     from datasets import load_dataset as hf_load_dataset
 
+    def write_log(entry: dict):
+        """Append training metrics to ``args.log_file`` if set."""
+        if not args.log_file:
+            return
+        is_new = not os.path.exists(args.log_file)
+        with open(args.log_file, "a", encoding="utf-8") as f:
+            if is_new:
+                f.write(",".join(entry.keys()) + "\n")
+            f.write(",".join(str(v) for v in entry.values()) + "\n")
+
     class ProgressCallback(TrainerCallback):
         """Collect training metrics for display in the web UI."""
 
-        def on_log(self, args, state, control, logs=None, **kwargs):
+        def on_log(self, args_cb, state, control, logs=None, **kwargs):
             if logs is not None:
                 entry = {"step": state.global_step}
                 entry.update(logs)
                 progress_log.append(entry)
+                write_log(entry)
 
     def launch_ui():
         """Start the Gradio web UI in a separate thread."""
@@ -87,7 +114,8 @@ def main():
 
             demo.load(update, None, log_md, every=1)
 
-        demo.launch(server_name="0.0.0.0", share=False)
+        demo.launch(server_name="0.0.0.0", server_port=args.ui_port,
+                    share=args.share)
 
     def load_local_dataset(file_path: str, tokenizer: AutoTokenizer):
         """Load and tokenize text from ``file_path``."""
@@ -121,7 +149,8 @@ def main():
 
     incoming_dir = os.path.join(args.data_dir, 'incoming')
     processed_dir = os.path.join(args.data_dir, 'processed')
-    training_file = os.path.join(args.data_dir, 'training_data.txt')
+    training_file = args.dataset_file or os.path.join(args.data_dir,
+                                                     'training_data.txt')
 
     os.makedirs(incoming_dir, exist_ok=True)
     os.makedirs(processed_dir, exist_ok=True)
