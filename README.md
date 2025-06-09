@@ -25,11 +25,14 @@ mkdir -p data/incoming data/processed
 
 3. Place any `.txt` files you want the model to learn from in `data/incoming`.
 
-4. Run the script:
+4. Run the script (use `--pretrained_model` to override the large default model):
 
 ```bash
-python main.py --max_loops 0
+python main.py --pretrained_model sshleifer/tiny-gpt2 --max_loops 0
 ```
+
+For a quick smoke test without downloading large models, add `--dry_run` to skip
+training entirely.
 
 The `--max_loops 0` argument keeps the program running indefinitely. Each time a
 new file appears in `data/incoming`, the contents will be used to further train
@@ -70,5 +73,7 @@ docker run -it --rm -p 7860:7860 \
   self-improving-ai
 ```
 
-The container launches `python main.py --max_loops 0` by default and exposes
+The container launches `python main.py --pretrained_model sshleifer/tiny-gpt2 --max_loops 0` by default and exposes
 the Gradio interface on port 7860.
+Use `--dry_run` with the container command if you only want to verify that the
+loop logic works without performing any training.
