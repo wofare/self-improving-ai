@@ -82,3 +82,34 @@ The container launches `python main.py --pretrained_model sshleifer/tiny-gpt2 --
 the Gradio interface on port 7860.
 Use `--dry_run` with the container command if you only want to verify that the
 loop logic works without performing any training.
+
+## Collecting Data
+
+To keep improving the model you need a steady stream of plain text files in `data/incoming`. Here are a few approaches:
+
+1. **Use existing open datasets.** The [Hugging Face `datasets` library](https://huggingface.co/datasets) provides many text corpora. You can download one and write it to a file like so:
+
+   ```bash
+   python - <<'PY'
+   from datasets import load_dataset
+
+   ds = load_dataset('openwebtext')['train']
+   with open('data/incoming/openwebtext.txt', 'w', encoding='utf-8') as f:
+       for item in ds['text']:
+           f.write(item + '\n')
+   PY
+   ```
+
+   You can also search the Hugging Face hub for new datasets using the `scripts/search_datasets.py` helper:
+
+   ```bash
+   python scripts/search_datasets.py --query wikipedia --limit 5 --show_license
+   ```
+
+   This prints matching dataset IDs and their licenses so you can quickly find new sources of text.
+
+2. **Gather domain-specific text** from public sources (e.g. blogs, documentation, or open data portals). Always check the license and terms of service.
+
+3. **Create synthetic data** by generating examples yourself or augmenting existing text (paraphrasing, translating, etc.).
+
+After files are placed in `data/incoming`, the training loop will automatically pick them up and fine-tune the model.
